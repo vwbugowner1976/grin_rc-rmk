@@ -1,0 +1,52 @@
+[package]
+name = "grin-rc-rmk"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "RMK firmware port for GRIN RC"
+
+[dependencies]
+rmk = { version = "0.9.0", default-features = false, features = ["defmt", "storage", "rynk", "watchdog", "ssd1306"] }
+cortex-m = { version = "0.7.7", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7.5"
+embassy-time = { version = "0.5", features = ["tick-hz-32_768", "defmt"] }
+embassy-stm32 = { version = "0.6", features = [
+    "stm32f411ce",
+    "defmt",
+    "memory-x",
+    "time-driver-any",
+] }
+embassy-executor = { version = "0.10", features = [
+    "defmt",
+    "platform-cortex-m",
+    "executor-thread",
+] }
+static_cell = "2"
+defmt = "1"
+defmt-rtt = "1"
+panic-probe = { version = "1", features = ["print-defmt"] }
+
+[build-dependencies]
+xz2 = "0.1.7"
+json = "0.12"
+const-gen = "1.6"
+
+[[bin]]
+name = "grin-rc-rmk"
+test = false
+bench = false
+
+[profile.dev]
+codegen-units = 1
+debug = true
+opt-level = 1
+overflow-checks = true
+lto = false
+panic = "unwind"
+
+[profile.release]
+codegen-units = 1
+debug = true
+opt-level = "z"
+overflow-checks = false
+lto = "fat"
