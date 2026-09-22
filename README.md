@@ -1,15 +1,7 @@
-# grin_rc-rmk
+# GRIN RC — RMK Firmware
 
-RMK firmware port for GRIN RC.
+RMK port of the GRIN RC keyboard.
 
-Upstream hardware/behavior reference:
-- https://github.com/policium/grin_rc/tree/main/firmware/source/grin_keebs/grin_rc
+Target: STM32F411, 10x7 COL2ROW matrix, RGB, OLED, capacitive touch sliders, Rynk/MyKeebStudio, and US-on-JIS behavior.
 
-Development happens on `rmk-port-v0.1`.
-The goal is feature parity with the QMK firmware, including:
-- STM32F411 keyboard matrix
-- Rynk / MyKeebStudio integration
-- US-on-JIS key behavior
-- WS2812 RGB matrix
-- SSD1306 OLED
-- left/right/center capacitive touch controls
+The original QMK firmware remains the behavioral reference.
