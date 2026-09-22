@@ -1,0 +1,20 @@
+name: RMK firmware CI
+
+on:
+  push:
+    branches: [rmk-port-v0.1]
+  pull_request:
+    branches: [rmk-port-v0.1]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+      - name: Check firmware
+        run: cargo check --target thumbv7em-none-eabihf
+      - name: Run host unit tests
+        run: cargo test --lib
