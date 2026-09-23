@@ -70,18 +70,5 @@ _ _ _ _ _ _ _ _ _ _ _ _
 _ _ _ _ _ _ _ _ _ _ _ _ _
 """
 
-[display]
-driver = "ssd1306"
-size = "128x32"
-rotation = 0
-renderer = "OledRenderer"
-min_render_interval = 10
-
-[display.protocol.i2c]
-instance = "I2C1"
-scl = "PB8"
-sda = "PB9"
-address = 0x3C
-
 [storage]
 enabled = true
