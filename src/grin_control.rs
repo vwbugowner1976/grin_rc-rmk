@@ -21,6 +21,8 @@ impl<'d> SingleTouchTest<'d> {
         Self { pin }
     }
 
+    async fn on_layer_change_event(&mut self, _event: LayerChangeEvent) {}
+
     async fn poll(&mut self) {
         let _ = self.pin.is_low();
     }
