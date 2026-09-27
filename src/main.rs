@@ -45,16 +45,22 @@ mod keyboard {
         config
     }
 
+    #[processor(poll_interval = 5)]
+    struct SingleTouchTest<'d> {
+        pin: Input<'d>,
+    }
+
+    impl<'d> SingleTouchTest<'d> {
+        async fn poll(&mut self) {
+            let _ = self.pin.is_low();
+        }
+    }
+
     #[register_processor(poll)]
-    fn grin_control() -> crate::grin_control::GrinControl<'static> {
-        // Step 1: initialize only the first left touch electrode (PA13).
-        // Keep the other GRIN hardware disconnected from the processor until
-        // USB enumeration is confirmed.
-        crate::grin_control::GrinControl::new(
-            [Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up)],
-            [Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up)],
-            Input::new(p.PA13, Pull::Up),
-            Output::new(p.PA0, Level::Low, Speed::VeryHigh),
-        )
+    fn grin_control() -> SingleTouchTest<'static> {
+        // Step 1: only PA13 is initialized and polled.
+        SingleTouchTest {
+            pin: Input::new(p.PA13, Pull::Up),
+        }
     }
 }
