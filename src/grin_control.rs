@@ -15,7 +15,7 @@ use crate::rgb::{hue_for_slider, rgb_value_for_slider};
 use crate::touch::{CenterState, SliderMode, SliderState, TouchEvent};
 
 const LED_COUNT: usize = 66;
-const LED_DATA_PIN_HZ: u32 = 96_000_000;
+const WS2812_T0H_CYCLES: u32 = 34; // ~0.35 us @ 96 MHz\nconst WS2812_T1H_CYCLES: u32 = 67; // ~0.70 us @ 96 MHz\nconst WS2812_BIT_CYCLES: u32 = 120; // ~1.25 us @ 96 MHz\nconst WS2812_RESET_CYCLES: u32 = 5_000; // ~52 us @ 96 MHz
 
 #[derive(Clone, Copy)]
 struct Hsv {
@@ -207,7 +207,7 @@ impl<'d> GrinControl<'d> {
                 cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 7 / 10);
             }
         }
-        cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_000_000 * 2);
+        cortex_m::asm::delay(WS2812_RESET_CYCLES);
     }
 }
 
