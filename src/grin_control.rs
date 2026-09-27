@@ -16,9 +16,6 @@ pub struct SingleTouchTest<'d> {
     left: [Input<'d>; 4],
     right: [Input<'d>; 4],
     center: Input<'d>,
-    left_state: SliderState,
-    right_state: SliderState,
-    center_state: CenterState,
 }
 
 impl<'d> SingleTouchTest<'d> {
@@ -27,20 +24,12 @@ impl<'d> SingleTouchTest<'d> {
         right: [Input<'d>; 4],
         center: Input<'d>,
     ) -> Self {
-        Self {
-            left,
-            right,
-            center,
-            left_state: SliderState::new(),
-            right_state: SliderState::new(),
-            center_state: CenterState::new(),
-        }
+        Self { left, right, center }
     }
 
     async fn on_layer_change_event(&mut self, _event: LayerChangeEvent) {}
 
     async fn poll(&mut self) {
-        let now_ms = embassy_time::Instant::now().as_millis() as u32;
         let left = [
             self.left[0].is_low(),
             self.left[1].is_low(),
@@ -53,11 +42,10 @@ impl<'d> SingleTouchTest<'d> {
             self.right[2].is_low(),
             self.right[3].is_low(),
         ];
-        let center = self.center.is_low();
+        let _center = self.center.is_low();
 
-        let _ = self.left_state.update(left, now_ms, true);
-        let _ = self.right_state.update(right, now_ms, false);
-        let _ = self.center_state.update(center, now_ms);
+        let _ = crate::touch::weighted_position(left);
+        let _ = crate::touch::weighted_position(right);
     }
 }
 
