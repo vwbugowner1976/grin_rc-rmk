@@ -13,7 +13,8 @@ use rmk::macros::rmk_keyboard;
 
 #[rmk_keyboard]
 mod keyboard {
-    use embassy_stm32::gpio::{Input, Level, Output, Pull, Speed};
+    use embassy_stm32::gpio::Input;
+    use embassy_stm32::gpio::Pull;
     use embassy_stm32::Config;
     use embassy_stm32::time::Hertz;
 
@@ -45,16 +46,6 @@ mod keyboard {
         config
     }
 
-    #[processor(poll_interval = 5)]
-    struct SingleTouchTest<'d> {
-        pin: Input<'d>,
-    }
-
-    impl<'d> SingleTouchTest<'d> {
-        async fn poll(&mut self) {
-            let _ = self.pin.is_low();
-        }
-    }
 
     #[register_processor(poll)]
     fn grin_control() -> SingleTouchTest<'static> {
