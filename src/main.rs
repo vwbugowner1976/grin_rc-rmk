@@ -48,10 +48,9 @@ mod keyboard {
 
 
     #[register_processor(poll)]
-    fn grin_control() -> SingleTouchTest<'static> {
-        // Step 1: only PA13 is initialized and polled.
-        SingleTouchTest {
-            pin: Input::new(p.PA13, Pull::Up),
-        }
+    fn grin_control() -> crate::grin_control::SingleTouchTest<'static> {
+        crate::grin_control::SingleTouchTest::new(
+            Input::new(p.PA13, Pull::Up),
+        )
     }
 }
