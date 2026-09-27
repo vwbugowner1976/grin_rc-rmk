@@ -1,0 +1,231 @@
+//! GRIN RC hardware controls: the three capacitive touch areas and WS2812 RGB.
+//!
+//! The original QMK firmware samples the touch electrodes as active-low inputs
+//! with 400/300-count hysteresis and drives 66 WS2812 LEDs from PA0.  RMK 0.9
+//! has a processor model, so the GRIN-specific hardware loop lives here instead
+//! of being mixed into the matrix scanner.
+
+use embassy_stm32::gpio::{Input, Level, Output, Pull, Speed};
+use embassy_time::{Duration, Instant};
+use rmk::event::{publish_event, Axis, AxisEvent, AxisValType, LayerChangeEvent, PointingEvent};
+use rmk::input_device::pointing::ALL_POINTING_DEVICES;
+use rmk::macros::processor;
+
+use crate::rgb::{hue_for_slider, rgb_value_for_slider};
+use crate::touch::{CenterState, SliderMode, SliderState, TouchEvent};
+
+const LED_COUNT: usize = 66;
+const LED_DATA_PIN_HZ: u32 = 96_000_000;
+
+#[derive(Clone, Copy)]
+struct Hsv {
+    h: u16,
+    s: u8,
+    v: u8,
+}
+
+impl Default for Hsv {
+    fn default() -> Self {
+        Self { h: 0, s: 255, v: 200 }
+    }
+}
+
+#[processor(subscribe = [LayerChangeEvent], poll_interval = 5)]
+pub struct GrinControl<'d> {
+    left: [Input<'d>; 4],
+    right: [Input<'d>; 4],
+    center: Input<'d>,
+    led: Output<'d>,
+    left_state: SliderState,
+    right_state: SliderState,
+    center_state: CenterState,
+    mode: SliderMode,
+    hsv: Hsv,
+    rgb_enabled: bool,
+    last_party: Instant,
+}
+
+impl<'d> GrinControl<'d> {
+    pub fn new(
+        left: [Input<'d>; 4],
+        right: [Input<'d>; 4],
+        center: Input<'d>,
+        led: Output<'d>,
+    ) -> Self {
+        Self {
+            left,
+            right,
+            center,
+            led,
+            left_state: SliderState::new(),
+            right_state: SliderState::new(),
+            center_state: CenterState::new(),
+            mode: SliderMode::None,
+            hsv: Hsv::default(),
+            rgb_enabled: true,
+            last_party: Instant::now(),
+        }
+    }
+
+    async fn on_layer_change_event(&mut self, _event: LayerChangeEvent) {
+        // GRIN RC's touch controls are independent of the active keyboard layer.
+    }
+
+    async fn poll(&mut self) {
+        let now = embassy_time::Instant::now();
+        let now_ms = now.as_millis() as u32;
+        let left = self.left.map(|p| p.is_low());
+        let right = self.right.map(|p| p.is_low());
+        let center = self.center.is_low();
+
+        if let Some(event) = self.left_state.update(left, now_ms, true) {
+            self.handle_touch(event);
+        }
+        if let Some(event) = self.right_state.update(right, now_ms, false) {
+            self.handle_touch(event);
+        }
+        if let Some(event) = self.center_state.update(center, now_ms) {
+            self.handle_touch(event);
+        }
+
+        // Keep the QMK party mode concept: a continuously changing hue, but only
+        // transmit a frame every 40 ms so the LED refresh cannot starve RMK.
+        if self.mode == SliderMode::Party && now.duration_since(self.last_party) >= Duration::from_millis(40) {
+            self.last_party = now;
+            self.hsv.h = (self.hsv.h + 3) % 360;
+            self.render_leds();
+        }
+    }
+
+    fn handle_touch(&mut self, event: TouchEvent) {
+        match event {
+            TouchEvent::CenterTap => {
+                self.mode = match self.mode {
+                    SliderMode::None => SliderMode::Rgb,
+                    SliderMode::Rgb => SliderMode::Volume,
+                    SliderMode::Volume => SliderMode::Scroll,
+                    SliderMode::Scroll => SliderMode::Party,
+                    SliderMode::Party => SliderMode::None,
+                };
+                if self.mode == SliderMode::Party {
+                    self.last_party = Instant::now();
+                }
+                self.render_leds();
+            }
+            TouchEvent::CenterLongPress => {
+                self.rgb_enabled = !self.rgb_enabled;
+                self.render_leds();
+            }
+            TouchEvent::LeftTap => {
+                if self.mode == SliderMode::Rgb || self.mode == SliderMode::Party {
+                    self.hsv.h = (self.hsv.h + 330) % 360;
+                    self.render_leds();
+                }
+            }
+            TouchEvent::RightTap => {
+                if self.mode == SliderMode::Rgb || self.mode == SliderMode::Party {
+                    self.hsv.h = (self.hsv.h + 30) % 360;
+                    self.render_leds();
+                }
+            }
+            TouchEvent::LeftSlide { position, delta, .. } => {
+                match self.mode {
+                    SliderMode::Rgb | SliderMode::Party => {
+                        self.hsv.v = rgb_value_for_slider(position);
+                        self.render_leds();
+                    }
+                    SliderMode::Scroll => self.publish_scroll(delta, 0),
+                    SliderMode::Volume => {
+                        // Volume HID actions are deliberately left to the next
+                        // integration step; no physical matrix position is
+                        // borrowed for a virtual key.
+                    }
+                    SliderMode::None => {}
+                }
+            }
+            TouchEvent::RightSlide { position, delta, .. } => {
+                match self.mode {
+                    SliderMode::Rgb | SliderMode::Party => {
+                        self.hsv.h = hue_for_slider(position);
+                        self.render_leds();
+                    }
+                    SliderMode::Scroll => self.publish_scroll(0, delta),
+                    SliderMode::Volume => {}
+                    SliderMode::None => {}
+                }
+            }
+        }
+    }
+
+    fn publish_scroll(&self, dx: i16, dy: i16) {
+        if dx == 0 && dy == 0 {
+            return;
+        }
+        publish_event(PointingEvent {
+            device_id: ALL_POINTING_DEVICES,
+            axes: [
+                AxisEvent { typ: AxisValType::Rel, axis: Axis::H, value: dx },
+                AxisEvent { typ: AxisValType::Rel, axis: Axis::V, value: dy },
+                AxisEvent { typ: AxisValType::Rel, axis: Axis::Z, value: 0 },
+            ],
+        });
+    }
+
+    fn render_leds(&mut self) {
+        let (r, g, b) = if !self.rgb_enabled || self.mode == SliderMode::None {
+            (0, 0, 0)
+        } else {
+            hsv_to_rgb(self.hsv.h, self.hsv.s, self.hsv.v)
+        };
+
+        // WS2812 expects GRB. The QMK GRIN RC uses PA0 and 66 pixels.
+        // This first RMK implementation uses a short critical section for the
+        // ~2 ms frame. A DMA/TIM5 backend can replace this without changing the
+        // touch/event layer.
+        cortex_m::interrupt::free(|_| {
+            for _ in 0..LED_COUNT {
+                self.write_byte(g);
+                self.write_byte(r);
+                self.write_byte(b);
+            }
+            self.led.set_low();
+        });
+    }
+
+    #[inline(always)]
+    fn write_byte(&mut self, value: u8) {
+        for bit in (0..8).rev() {
+            let one = (value & (1 << bit)) != 0;
+            self.led.set_high();
+            if one {
+                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 7 / 10);
+                self.led.set_low();
+                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 3 / 10);
+            } else {
+                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 3 / 10);
+                self.led.set_low();
+                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 7 / 10);
+            }
+        }
+        cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_000_000 * 2);
+    }
+}
+
+fn hsv_to_rgb(h: u16, s: u8, v: u8) -> (u8, u8, u8) {
+    if s == 0 {
+        return (v, v, v);
+    }
+    let region = (h / 60) % 6;
+    let f = ((h % 60) * 255 / 60) as u8;
+    let p = ((v as u16 * (255 - s as u16)) / 255) as u8;
+    let q = ((v as u16 * (255 - (s as u16 * f as u16 / 255))) / 255) as u8;
+    let t = ((v as u16 * (255 - (s as u16 * (255 - f as u16) / 255))) / 255) as u8;
+    match region {
+        0 => (v, t, p),
+        1 => (q, v, p),
+        2 => (p, v, t),
+        3 => (p, q, v),
+        4 => (t, p, v),
+        _ => (v, p, q),
+    }
+}
