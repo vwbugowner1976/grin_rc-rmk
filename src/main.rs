@@ -4,6 +4,7 @@
 use defmt_rtt as _;
 use panic_probe as _;
 
+mod grin_control;
 mod rgb;
 mod touch;
 mod us_on_jis;
@@ -12,6 +13,7 @@ use rmk::macros::rmk_keyboard;
 
 #[rmk_keyboard]
 mod keyboard {
+    use embassy_stm32::gpio::{Input, Level, Output, Pull, Speed};
     use embassy_stm32::Config;
     use embassy_stm32::time::Hertz;
 
@@ -41,5 +43,25 @@ mod keyboard {
             config.rcc.sys = Sysclk::PLL1_P;
         }
         config
+    }
+
+    #[register_processor(poll)]
+    fn grin_control() -> crate::grin_control::GrinControl<'static> {
+        crate::grin_control::GrinControl::new(
+            [
+                Input::new(p.PA13, Pull::Up),
+                Input::new(p.PA10, Pull::Up),
+                Input::new(p.PA9, Pull::Up),
+                Input::new(p.PA8, Pull::Up),
+            ],
+            [
+                Input::new(p.PC14, Pull::Up),
+                Input::new(p.PC13, Pull::Up),
+                Input::new(p.PC15, Pull::Up),
+                Input::new(p.PA2, Pull::Up),
+            ],
+            Input::new(p.PA1, Pull::Up),
+            Output::new(p.PA0, Level::Low, Speed::VeryHigh),
+        )
     }
 }
