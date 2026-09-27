@@ -51,6 +51,7 @@ mod keyboard {
     fn grin_control() -> crate::grin_control::SingleTouchTest<'static> {
         crate::grin_control::SingleTouchTest::new(
             Input::new(p.PA13, Pull::Up),
+            Input::new(p.PA10, Pull::Up),
         )
     }
 }
