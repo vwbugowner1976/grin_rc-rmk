@@ -45,6 +45,23 @@ mod keyboard {
         config
     }
 
-    // GRIN custom touch/LED processor is temporarily disabled for USB bring-up.
-    // Re-enable after confirming the RMK USB device enumerates reliably.
+    #[register_processor(poll)]
+    fn grin_control() -> crate::grin_control::GrinControl<'static> {
+        crate::grin_control::GrinControl::new(
+            [
+                Input::new(p.PA13, Pull::Up),
+                Input::new(p.PA10, Pull::Up),
+                Input::new(p.PA9, Pull::Up),
+                Input::new(p.PA8, Pull::Up),
+            ],
+            [
+                Input::new(p.PC14, Pull::Up),
+                Input::new(p.PC13, Pull::Up),
+                Input::new(p.PC15, Pull::Up),
+                Input::new(p.PA2, Pull::Up),
+            ],
+            Input::new(p.PA1, Pull::Up),
+            Output::new(p.PA0, Level::Low, Speed::VeryHigh),
+        )
+    }
 }
