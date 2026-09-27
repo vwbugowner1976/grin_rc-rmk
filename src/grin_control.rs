@@ -184,25 +184,9 @@ impl<'d> GrinControl<'d> {
     }
 
     fn render_leds(&mut self) {
-        let (r, g, b) = if !self.rgb_enabled || self.mode == SliderMode::None {
-            (0, 0, 0)
-        } else {
-            hsv_to_rgb(self.hsv.h, self.hsv.s, self.hsv.v)
-        };
-
-        // WS2812 expects GRB. The QMK GRIN RC uses PA0 and 66 pixels.
-        // This first RMK implementation uses a short critical section for the
-        // ~2 ms frame. A DMA/TIM5 backend can replace this without changing the
-        // touch/event layer.
-        cortex_m::interrupt::free(|_| {
-            for _ in 0..LED_COUNT {
-                self.write_byte(g);
-                self.write_byte(r);
-                self.write_byte(b);
-            }
-            self.led.set_low();
-            cortex_m::asm::delay(WS2812_RESET_CYCLES);
-        });
+        // Temporarily disabled for USB/touch isolation.
+        // The GRIN touch processor must remain responsive without entering the
+        // long WS2812 bit-banging critical section.
     }
 
     #[inline(always)]
