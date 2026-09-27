@@ -13,20 +13,51 @@ use rmk::macros::processor;
 
 #[processor(subscribe = [LayerChangeEvent], poll_interval = 5)]
 pub struct SingleTouchTest<'d> {
-    pins: [Input<'d>; 9],
+    left: [Input<'d>; 4],
+    right: [Input<'d>; 4],
+    center: Input<'d>,
+    left_state: SliderState,
+    right_state: SliderState,
+    center_state: CenterState,
 }
 
 impl<'d> SingleTouchTest<'d> {
-    pub fn new(pins: [Input<'d>; 9]) -> Self {
-        Self { pins }
+    pub fn new(
+        left: [Input<'d>; 4],
+        right: [Input<'d>; 4],
+        center: Input<'d>,
+    ) -> Self {
+        Self {
+            left,
+            right,
+            center,
+            left_state: SliderState::new(),
+            right_state: SliderState::new(),
+            center_state: CenterState::new(),
+        }
     }
 
     async fn on_layer_change_event(&mut self, _event: LayerChangeEvent) {}
 
     async fn poll(&mut self) {
-        for pin in &self.pins {
-            let _ = pin.is_low();
-        }
+        let now_ms = embassy_time::Instant::now().as_millis() as u32;
+        let left = [
+            self.left[0].is_low(),
+            self.left[1].is_low(),
+            self.left[2].is_low(),
+            self.left[3].is_low(),
+        ];
+        let right = [
+            self.right[0].is_low(),
+            self.right[1].is_low(),
+            self.right[2].is_low(),
+            self.right[3].is_low(),
+        ];
+        let center = self.center.is_low();
+
+        let _ = self.left_state.update(left, now_ms, true);
+        let _ = self.right_state.update(right, now_ms, false);
+        let _ = self.center_state.update(center, now_ms);
     }
 }
 
