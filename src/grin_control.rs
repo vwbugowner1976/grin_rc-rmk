@@ -13,21 +13,20 @@ use rmk::macros::processor;
 
 #[processor(subscribe = [LayerChangeEvent], poll_interval = 5)]
 pub struct SingleTouchTest<'d> {
-    pins: [Input<'d>; 2],
+    pins: [Input<'d>; 9],
 }
 
 impl<'d> SingleTouchTest<'d> {
-    pub fn new(pin_a: Input<'d>, pin_b: Input<'d>) -> Self {
-        Self {
-            pins: [pin_a, pin_b],
-        }
+    pub fn new(pins: [Input<'d>; 9]) -> Self {
+        Self { pins }
     }
 
     async fn on_layer_change_event(&mut self, _event: LayerChangeEvent) {}
 
     async fn poll(&mut self) {
-        let _ = self.pins[0].is_low();
-        let _ = self.pins[1].is_low();
+        for pin in &self.pins {
+            let _ = pin.is_low();
+        }
     }
 }
 
