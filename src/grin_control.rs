@@ -5,7 +5,7 @@
 //! has a processor model, so the GRIN-specific hardware loop lives here instead
 //! of being mixed into the matrix scanner.
 
-use embassy_stm32::gpio::{Input, Level, Output, Pull, Speed};
+use embassy_stm32::gpio::{Input, Output};
 use embassy_time::{Duration, Instant};
 use rmk::event::{publish_event, Axis, AxisEvent, AxisValType, LayerChangeEvent, PointingEvent};
 use rmk::input_device::pointing::ALL_POINTING_DEVICES;
@@ -74,8 +74,18 @@ impl<'d> GrinControl<'d> {
     async fn poll(&mut self) {
         let now = embassy_time::Instant::now();
         let now_ms = now.as_millis() as u32;
-        let left = self.left.map(|p| p.is_low());
-        let right = self.right.map(|p| p.is_low());
+        let left = [
+            self.left[0].is_low(),
+            self.left[1].is_low(),
+            self.left[2].is_low(),
+            self.left[3].is_low(),
+        ];
+        let right = [
+            self.right[0].is_low(),
+            self.right[1].is_low(),
+            self.right[2].is_low(),
+            self.right[3].is_low(),
+        ];
         let center = self.center.is_low();
 
         if let Some(event) = self.left_state.update(left, now_ms, true) {
@@ -198,13 +208,13 @@ impl<'d> GrinControl<'d> {
             let one = (value & (1 << bit)) != 0;
             self.led.set_high();
             if one {
-                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 7 / 10);
+                cortex_m::asm::delay(WS2812_T1H_CYCLES);
                 self.led.set_low();
-                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 3 / 10);
+                cortex_m::asm::delay(WS2812_BIT_CYCLES - WS2812_T1H_CYCLES);
             } else {
-                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 3 / 10);
+                cortex_m::asm::delay(WS2812_T0H_CYCLES);
                 self.led.set_low();
-                cortex_m::asm::delay(LED_DATA_PIN_HZ / 1_250_000 * 7 / 10);
+                cortex_m::asm::delay(WS2812_BIT_CYCLES - WS2812_T0H_CYCLES);
             }
         }
         cortex_m::asm::delay(WS2812_RESET_CYCLES);
