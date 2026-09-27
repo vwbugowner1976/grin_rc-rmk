@@ -45,6 +45,16 @@ mod keyboard {
         config
     }
 
-    // GRIN custom processor isolated again: base RMK USB is known-good.
-    // Reintroduce the touch GPIOs one at a time after confirming enumeration.
+    #[register_processor(poll)]
+    fn grin_control() -> crate::grin_control::GrinControl<'static> {
+        // Step 1: initialize only the first left touch electrode (PA13).
+        // Keep the other GRIN hardware disconnected from the processor until
+        // USB enumeration is confirmed.
+        crate::grin_control::GrinControl::new(
+            [Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up)],
+            [Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up), Input::new(p.PA13, Pull::Up)],
+            Input::new(p.PA13, Pull::Up),
+            Output::new(p.PA0, Level::Low, Speed::VeryHigh),
+        )
+    }
 }
