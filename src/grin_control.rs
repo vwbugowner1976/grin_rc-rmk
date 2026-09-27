@@ -201,6 +201,7 @@ impl<'d> GrinControl<'d> {
                 self.write_byte(b);
             }
             self.led.set_low();
+            cortex_m::asm::delay(WS2812_RESET_CYCLES);
         });
     }
 
@@ -219,7 +220,6 @@ impl<'d> GrinControl<'d> {
                 cortex_m::asm::delay(WS2812_BIT_CYCLES - WS2812_T0H_CYCLES);
             }
         }
-        cortex_m::asm::delay(WS2812_RESET_CYCLES);
     }
 }
 
