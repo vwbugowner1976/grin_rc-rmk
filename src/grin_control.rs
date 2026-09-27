@@ -11,7 +11,7 @@ use rmk::event::{publish_event, Axis, AxisEvent, AxisValType, LayerChangeEvent, 
 use rmk::input_device::pointing::ALL_POINTING_DEVICES;
 use rmk::macros::processor;
 
-#[processor(poll_interval = 5)]
+#[processor(subscribe = [LayerChangeEvent], poll_interval = 5)]
 pub struct SingleTouchTest<'d> {
     pin: Input<'d>,
 }
