@@ -11,6 +11,22 @@ use rmk::event::{publish_event, Axis, AxisEvent, AxisValType, LayerChangeEvent, 
 use rmk::input_device::pointing::ALL_POINTING_DEVICES;
 use rmk::macros::processor;
 
+#[processor(poll_interval = 5)]
+pub struct SingleTouchTest<'d> {
+    pin: Input<'d>,
+}
+
+impl<'d> SingleTouchTest<'d> {
+    pub fn new(pin: Input<'d>) -> Self {
+        Self { pin }
+    }
+
+    async fn poll(&mut self) {
+        let _ = self.pin.is_low();
+    }
+}
+
+
 use crate::rgb::{hue_for_slider, rgb_value_for_slider};
 use crate::touch::{CenterState, SliderMode, SliderState, TouchEvent};
 
