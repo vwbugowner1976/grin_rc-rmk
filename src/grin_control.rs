@@ -15,8 +15,10 @@ use crate::rgb::{hue_for_slider, rgb_value_for_slider};
 use crate::touch::{CenterState, SliderMode, SliderState, TouchEvent};
 
 const LED_COUNT: usize = 66;
-const WS2812_T0H_CYCLES: u32 = 34; // ~0.35 us @ 96 MHz\nconst WS2812_T1H_CYCLES: u32 = 67; // ~0.70 us @ 96 MHz\nconst WS2812_BIT_CYCLES: u32 = 120; // ~1.25 us @ 96 MHz\nconst WS2812_RESET_CYCLES: u32 = 5_000; // ~52 us @ 96 MHz
-
+const WS2812_T0H_CYCLES: u32 = 34; // ~0.35 us @ 96 MHz
+const WS2812_T1H_CYCLES: u32 = 67; // ~0.70 us @ 96 MHz
+const WS2812_BIT_CYCLES: u32 = 120; // ~1.25 us @ 96 MHz
+const WS2812_RESET_CYCLES: u32 = 5_000; // ~52 us @ 96 MHz
 #[derive(Clone, Copy)]
 struct Hsv {
     h: u16,
