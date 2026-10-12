@@ -14,11 +14,19 @@ use rmk::macros::processor;
 #[processor(subscribe = [LayerChangeEvent], poll_interval = 5)]
 pub struct SingleTouchTest<'d> {
     pins: [Input<'d>; 9],
+    left_state: SliderState,
+    right_state: SliderState,
+    center_state: CenterState,
 }
 
 impl<'d> SingleTouchTest<'d> {
     pub fn new(pins: [Input<'d>; 9]) -> Self {
-        Self { pins }
+        Self {
+            pins,
+            left_state: SliderState::new(),
+            right_state: SliderState::new(),
+            center_state: CenterState::new(),
+        }
     }
 
     async fn on_layer_change_event(&mut self, _event: LayerChangeEvent) {}
@@ -27,6 +35,8 @@ impl<'d> SingleTouchTest<'d> {
         for pin in &self.pins {
             let _ = pin.is_low();
         }
+        // State machines are constructed but not updated in this isolation step.
+        let _ = (&self.left_state, &self.right_state, &self.center_state);
     }
 }
 
