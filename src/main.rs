@@ -8,6 +8,7 @@ mod grin_control;
 mod rgb;
 mod touch;
 mod us_on_jis;
+pub mod ws2812;
 
 use rmk::macros::rmk_keyboard;
 
