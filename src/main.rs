@@ -9,6 +9,7 @@ mod rgb;
 mod touch;
 mod us_on_jis;
 pub mod ws2812;
+mod ws2812_stm32;
 
 use rmk::macros::rmk_keyboard;
 
@@ -47,6 +48,11 @@ mod keyboard {
         config
     }
 
+
+    #[register_processor(poll)]
+    fn ws2812_smoke_test() -> crate::ws2812_stm32::Ws2812SmokeTest<'static> {
+        crate::ws2812_stm32::Ws2812SmokeTest::new(p.TIM5, p.PA0, p.DMA1_CH0)
+    }
 
     #[register_processor(poll)]
     fn grin_control() -> crate::grin_control::SingleTouchTest<'static> {
