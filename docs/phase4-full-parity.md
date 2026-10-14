@@ -32,8 +32,9 @@ The target is a behavioral port of the upstream QMK GRIN RC firmware, with RMK/R
 - OLED displays WPM, active layer and touch mode
 
 The pure touch/RGB modules now encode the QMK timing and slider bucket rules
-and include host unit tests. Hardware GPIO/WS2812/HID plumbing is kept isolated
-until the exact RMK 0.9 embedded APIs are compile-tested.
+and include host unit tests. A PWM+DMA WS2812 backend and temporary low-brightness
+smoke test have been added in src/ws2812_stm32.rs; it is still uncompiled and
+not hardware-verified. See docs/ws2812-dma-bringup.md for the validation gates.
 
 ## US-on-JIS
 
