@@ -2,9 +2,9 @@ name: RMK firmware CI
 
 on:
   push:
-    branches: [rmk-port-v0.1]
+    branches: [rmk-port-v0.1, ws2812-driver-prototype]
   pull_request:
-    branches: [rmk-port-v0.1]
+    branches: [rmk-port-v0.1, ws2812-driver-prototype]
 
 jobs:
   check:
@@ -16,5 +16,5 @@ jobs:
           targets: thumbv7em-none-eabihf
       - name: Check firmware
         run: cargo check --target thumbv7em-none-eabihf
-      - name: Run host unit tests
+      - name: Run pure-module unit tests on host
         run: cargo test --lib
