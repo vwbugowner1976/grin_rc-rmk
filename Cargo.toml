@@ -14,7 +14,7 @@ embassy-stm32 = { version = "0.6", features = [
     "stm32f411ce",
     "defmt",
     "memory-x",
-    "time-driver-any",
+    "time-driver-tim3",
 ] }
 embassy-executor = { version = "0.10", features = [
     "defmt",
