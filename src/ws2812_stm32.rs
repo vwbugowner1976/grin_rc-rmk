@@ -60,11 +60,11 @@ impl<'d> Ws2812Dma<'d> {
         );
         pwm.channel(Channel::Ch1).set_duty_cycle(0);
 
-        // With a 1.25 us bit period, 38/120 ~= 0.40 us and 76/120 ~= 0.79 us.
-        // These are within the commonly used WS2812B timing windows.
+        // Match the timing used by the existing prototype constants: T0H ~= 0.35 us,
+        // T1H ~= 0.70 us at a 96 MHz timer clock and 1.25 us bit period.
         let period = pwm.max_duty_cycle() as u16;
-        let zero_high = (period as u32 * 32 / 100) as u16;
-        let one_high = (period as u32 * 64 / 100) as u16;
+        let zero_high = (period as u32 * 34 / 120) as u16;
+        let one_high = (period as u32 * 67 / 120) as u16;
 
         Self {
             pwm,
