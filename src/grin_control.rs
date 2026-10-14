@@ -187,9 +187,15 @@ impl<'d> GrinControl<'d> {
             }
             TouchEvent::RightSlide { position, delta, .. } => {
                 match self.mode {
-                    SliderMode::Rgb | SliderMode::Party => {
+                    SliderMode::Rgb => {
                         self.hsv.h = hue_for_slider(position);
                         self.render_leds();
+                    }
+                    SliderMode::Party => {
+                        // QMK changes rgb_angle by delta * 3 in PARTY mode.
+                        // The dedicated QMK dj_effect renderer is not ported yet;
+                        // don't silently substitute a different HSV-slider behavior.
+                        let _ = (position, delta);
                     }
                     SliderMode::Scroll => self.publish_scroll(0, delta),
                     SliderMode::Volume => {}
